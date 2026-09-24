@@ -1,7 +1,7 @@
-import test from "node:test";import assert from "node:assert/strict";
-import {createTask,moveTask,filterTasks,metrics,deleteTask} from "../src/store.js";
-test("createTask normalizes and validates",()=>{assert.throws(()=>createTask({title:"  "}),/required/);const t=createTask({title:"  Ship it  ",priority:"wat"});assert.equal(t.title,"Ship it");assert.equal(t.priority,"medium");assert.equal(t.status,"backlog")});
-test("moveTask is immutable",()=>{const a=createTask({id:"a",title:"A"});const list=[a];const next=moveTask(list,"a","done");assert.equal(list[0].status,"backlog");assert.equal(next[0].status,"done");assert.notEqual(next,list)});
-test("filterTasks searches tags and combines filters",()=>{const xs=[createTask({title:"Alpha",assignee:"Maya",priority:"high",tags:["security"]}),createTask({title:"Beta",assignee:"Rafi",priority:"low"})];assert.equal(filterTasks(xs,{query:"security"}).length,1);assert.equal(filterTasks(xs,{priority:"low",assignee:"Rafi"}).length,1);assert.equal(filterTasks(xs,{priority:"high",assignee:"Rafi"}).length,0)});
-test("metrics computes completion",()=>{const xs=[createTask({title:"A",status:"done"}),createTask({title:"B",status:"progress"})];const m=metrics(xs);assert.equal(m.total,2);assert.equal(m.done,1);assert.equal(m.completion,50)});
-test("deleteTask removes only target",()=>{const xs=[createTask({id:"a",title:"A"}),createTask({id:"b",title:"B"})];assert.deepEqual(deleteTask(xs,"a").map(x=>x.id),["b"])});
+import test from "node:test";import assert from "node:assert/strict";import{readFile}from"node:fs/promises";
+const html=await readFile(new URL("../index.html",import.meta.url),"utf8"),css=await readFile(new URL("../styles.css",import.meta.url),"utf8"),js=await readFile(new URL("../src/app.js",import.meta.url),"utf8");
+test("portfolio exposes all major sections",()=>{for(const id of["work","about","lab","contact"])assert.match(html,new RegExp(`id="${id}"`))});
+test("portfolio contains four fictional case studies",()=>{for(const key of["vesper","nami","morrow","afterdark"])assert.match(html,new RegExp(`data-project="${key}"`))});
+test("interaction layer includes accessibility and reduced-motion support",()=>{assert.match(html,/aria-label=/);assert.match(css,/prefers-reduced-motion/);assert.match(js,/IntersectionObserver/)});
+test("visual system includes responsive layouts and custom motion",()=>{assert.match(css,/@media\(max-width:900px\)/);assert.match(css,/@keyframes marquee/);assert.match(css,/@keyframes radar/)});
+test("command palette and case dialog are wired",()=>{assert.match(html,/id="palette"/);assert.match(html,/id="caseDialog"/);assert.match(js,/openPalette/);assert.match(js,/openCase/)});
