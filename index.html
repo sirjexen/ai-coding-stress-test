@@ -1,9 +1,218 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orbit — Project OS</title><link rel="stylesheet" href="./styles.css"></head>
-<body><aside class="sidebar"><div class="brand"><div class="logo">O</div><b>Orbit</b></div><nav><a class="active">◫ Overview</a><a>⌁ My tasks</a><a>◎ Timeline</a><a>◌ Reports</a></nav><div class="sidebar-bottom"><button id="command">⌘ Command palette <kbd>⌘K</kbd></button><button id="theme">◐ Toggle theme</button></div></aside>
-<main><header class="topbar"><div><span class="eyebrow">ACME PRODUCT</span><h1>Launch workspace</h1><p>Plan, prioritize and ship the next release.</p></div><div class="actions"><button id="export">Export</button><label class="button">Import<input id="importFile" type="file" accept="application/json" hidden></label><button id="newTask" class="primary">＋ New task</button></div></header>
-<section id="metrics" class="metrics"></section>
-<section class="toolbar"><label class="search">⌕ <input id="search" placeholder="Search tasks, tags or people…"></label><select id="priority"><option value="all">All priorities</option><option>urgent</option><option>high</option><option>medium</option><option>low</option></select><select id="assignee"><option value="all">Everyone</option><option>Maya</option><option>Rafi</option><option>Nadia</option><option>Unassigned</option></select><button id="reset">Reset demo</button></section>
-<div class="workspace"><section id="board" class="board"></section><aside class="activity-panel"><header><b>Activity</b><span>Live</span></header><ul id="activity"></ul><div class="tip"><b>Power user</b><p>Drag cards between columns. Press <kbd>N</kbd> for a new task or <kbd>⌘K</kbd> for commands.</p></div></aside></div></main>
-<dialog id="taskDialog"><form id="taskForm" method="dialog"><div class="dialog-head"><h2 id="modalTitle">Create task</h2><button type="button" id="cancel">×</button></div><input type="hidden" name="id"><label>Title<input name="title" required maxlength="80"></label><label>Description<textarea name="description" rows="3"></textarea></label><div class="grid2"><label>Status<select name="status"><option value="backlog">Backlog</option><option value="progress">In progress</option><option value="review">Review</option><option value="done">Done</option></select></label><label>Priority<select name="priority"><option>low</option><option selected>medium</option><option>high</option><option>urgent</option></select></label><label>Assignee<select name="assignee"><option>Maya</option><option>Rafi</option><option>Nadia</option><option>Unassigned</option></select></label><label>Due date<input name="due" type="date"></label></div><label>Tags<input name="tags" placeholder="frontend, growth"></label><footer><button id="deleteTask" type="button" class="danger">Delete</button><span></span><button type="button" id="cancel" onclick="document.querySelector('#taskDialog').close()">Cancel</button><button class="primary" value="default">Save task</button></footer></form></dialog>
-<dialog id="palette" class="palette"><input id="paletteInput" autofocus placeholder="Type a command…"><div id="commands"><button data-action="new">＋ Create new task</button><button data-action="theme">◐ Toggle theme</button><button data-action="export">⇩ Export workspace</button><button data-action="reset">↻ Reset demo data</button></div></dialog>
-<script type="module" src="./src/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090c">
+  <meta name="description" content="JEXN — fictional creative technologist portfolio. Digital products, identities and interactive systems.">
+  <title>JEXN — Creative Technologist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@400;500;600;700;800&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <canvas id="ambient" aria-hidden="true"></canvas>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-ring" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"><span></span></div>
+
+  <header class="nav">
+    <a class="brand magnetic" href="#top" aria-label="Jexn home">
+      <span class="brand-mark">JX</span>
+      <span class="brand-word">JEXN®</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a href="#work">Work</a>
+      <a href="#about">About</a>
+      <a href="#lab">Lab</a>
+    </nav>
+    <button class="availability magnetic" id="openPalette">
+      <i></i><span>Available Q4</span><kbd>⌘K</kbd>
+    </button>
+  </header>
+
+  <main id="top">
+    <section class="hero section-pad">
+      <div class="hero-kicker reveal">
+        <span>Independent studio / Jakarta ↔ anywhere</span>
+        <span>2026 — selected work</span>
+      </div>
+
+      <div class="hero-stage">
+        <div class="hero-copy">
+          <h1 class="display split reveal">
+            I design<br>
+            <span class="outline">digital things</span><br>
+            with a pulse.
+          </h1>
+          <p class="hero-deck reveal">JEXN is the fictional portfolio of a creative technologist turning strategy, code and visual systems into products that feel inevitable.</p>
+          <div class="hero-actions reveal">
+            <a class="button-primary magnetic" href="#work"><span>Explore selected work</span><b>↘</b></a>
+            <button class="button-ghost magnetic" data-scroll="#about">About the practice</button>
+          </div>
+        </div>
+
+        <div class="hero-art reveal" aria-label="Interactive generative sculpture">
+          <div class="orb-shell tilt">
+            <div class="orb orb-a"></div>
+            <div class="orb orb-b"></div>
+            <div class="orb orb-c"></div>
+            <div class="orbit-line orbit-one"></div>
+            <div class="orbit-line orbit-two"></div>
+            <div class="artifact-label top"><span>01</span> SYNTHETIC / FORM</div>
+            <div class="artifact-label bottom">DRAG YOUR POINTER <span>↗</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-footer reveal">
+        <div class="mini-stat"><strong>12</strong><span>launches<br>this year</span></div>
+        <div class="mini-stat"><strong>04</strong><span>disciplines<br>under one roof</span></div>
+        <div class="mini-stat"><strong>∞</strong><span>iterations<br>before ordinary</span></div>
+        <div class="scroll-cue"><span>Scroll to enter</span><i></i></div>
+      </div>
+    </section>
+
+    <section class="marquee-wrap" aria-label="Capabilities">
+      <div class="marquee">
+        <span>ART DIRECTION ✦ PRODUCT DESIGN ✦ CREATIVE DEVELOPMENT ✦ DIGITAL IDENTITY ✦ PROTOTYPING ✦ MOTION SYSTEMS ✦</span>
+        <span aria-hidden="true">ART DIRECTION ✦ PRODUCT DESIGN ✦ CREATIVE DEVELOPMENT ✦ DIGITAL IDENTITY ✦ PROTOTYPING ✦ MOTION SYSTEMS ✦</span>
+      </div>
+    </section>
+
+    <section class="work section-pad" id="work">
+      <div class="section-head reveal">
+        <div><span class="eyebrow">01 / Selected work</span><h2>Built to be remembered,<br>not just used.</h2></div>
+        <p>Fictional projects across fintech, culture, mobility and machine intelligence. Each case blends systems thinking with a distinct visual language.</p>
+      </div>
+
+      <div class="project-grid">
+        <article class="project project-wide reveal tilt" data-project="vesper" tabindex="0">
+          <div class="project-visual visual-vesper">
+            <div class="screen-card bank-card">
+              <span>VESPER / BLACK</span><b>•• 7408</b><small>Adaptive wealth layer</small>
+            </div>
+            <div class="balance">€48,204<span>.90</span></div>
+            <div class="signal-bars"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="project-meta">
+            <div><span>01</span><h3>Vesper Finance</h3></div>
+            <p>Product system / Creative dev</p>
+            <button aria-label="Open Vesper Finance case study">↗</button>
+          </div>
+        </article>
+
+        <article class="project reveal tilt" data-project="nami" tabindex="0">
+          <div class="project-visual visual-nami">
+            <div class="sun"></div><div class="nami-word">NAMI</div><div class="route route-a"></div><div class="route route-b"></div>
+            <small>URBAN MOTION / 35.6762° N</small>
+          </div>
+          <div class="project-meta">
+            <div><span>02</span><h3>Nami Mobility</h3></div>
+            <p>Brand / Interface / Motion</p>
+            <button aria-label="Open Nami Mobility case study">↗</button>
+          </div>
+        </article>
+
+        <article class="project reveal tilt" data-project="morrow" tabindex="0">
+          <div class="project-visual visual-morrow">
+            <div class="morrow-grid"></div>
+            <div class="morrow-chip">M/AI</div>
+            <div class="morrow-title">MORROW<br><i>INTELLIGENCE</i></div>
+            <div class="morrow-orb"></div>
+          </div>
+          <div class="project-meta">
+            <div><span>03</span><h3>Morrow AI</h3></div>
+            <p>Identity / Prototype</p>
+            <button aria-label="Open Morrow AI case study">↗</button>
+          </div>
+        </article>
+
+        <article class="project project-wide reveal tilt" data-project="afterdark" tabindex="0">
+          <div class="project-visual visual-afterdark">
+            <div class="afterdark-type">AFTER<br>DARK</div>
+            <div class="poster p1"><small>FRI 23:00</small><b>NO/STATIC</b></div>
+            <div class="poster p2"><small>ROOM 02</small><b>∆ ECHOES</b></div>
+            <div class="poster p3"><small>LIVE A/V</small><b>PHASE III</b></div>
+          </div>
+          <div class="project-meta">
+            <div><span>04</span><h3>Afterdark Archive</h3></div>
+            <p>Cultural platform / Art direction</p>
+            <button aria-label="Open Afterdark Archive case study">↗</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="manifesto section-pad" id="about">
+      <div class="manifesto-number reveal">02</div>
+      <div class="manifesto-copy">
+        <p class="eyebrow reveal">A small practice for ambitious interfaces</p>
+        <h2 class="reveal">The best digital work lives somewhere between <em>logic</em> and <em>instinct.</em></h2>
+        <div class="manifesto-columns">
+          <p class="reveal">I work end-to-end: framing the problem, shaping the product language, prototyping interactions, and writing the code that makes the final thing feel precise.</p>
+          <p class="reveal">The fictional JEXN studio partners with founders and creative teams when the brief is too strange for a template and too important to feel generic.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="services section-pad">
+      <div class="services-head reveal"><span class="eyebrow">03 / Capabilities</span><span>Hover to inspect</span></div>
+      <div class="service-list">
+        <article class="service reveal" data-index="01"><h3>Product direction</h3><p>Positioning, flows, information architecture, systems thinking.</p><span>Strategy</span></article>
+        <article class="service reveal" data-index="02"><h3>Visual systems</h3><p>Identity, interface language, art direction, motion principles.</p><span>Design</span></article>
+        <article class="service reveal" data-index="03"><h3>Creative development</h3><p>Responsive frontends, prototypes, generative visuals, interactions.</p><span>Code</span></article>
+        <article class="service reveal" data-index="04"><h3>Launch craft</h3><p>Polish, performance, accessibility, handoff and iteration.</p><span>Ship</span></article>
+      </div>
+    </section>
+
+    <section class="lab section-pad" id="lab">
+      <div class="section-head reveal">
+        <div><span class="eyebrow">04 / Experimental lab</span><h2>Useful obsessions.</h2></div>
+        <p>Small interactive experiments that eventually leak into client work.</p>
+      </div>
+      <div class="lab-grid">
+        <article class="lab-card reveal"><div class="lab-canvas waves"><i></i><i></i><i></i><i></i><i></i><i></i></div><footer><b>Wavefield 06</b><span>Generative study</span></footer></article>
+        <article class="lab-card reveal"><div class="lab-canvas glyphs"><b>J</b><b>E</b><b>X</b><b>N</b></div><footer><b>Glyph Engine</b><span>Variable type test</span></footer></article>
+        <article class="lab-card reveal"><div class="lab-canvas radar"><i></i><i></i><i></i><b>27°</b></div><footer><b>Signal Room</b><span>Spatial interface</span></footer></article>
+      </div>
+    </section>
+
+    <section class="contact section-pad" id="contact">
+      <div class="contact-card reveal">
+        <div class="contact-top"><span>Have a difficult idea?</span><span>hello@jexn.studio</span></div>
+        <h2>Make it<br><i>impossible</i><br>to ignore.</h2>
+        <div class="contact-bottom">
+          <a href="mailto:hello@jexn.studio" class="magnetic">Start a project <b>↗</b></a>
+          <p>Based in Jakarta.<br>Working globally.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer section-pad">
+    <div><span class="brand-word">JEXN®</span><small>Fictional portfolio / 2026</small></div>
+    <div class="footer-links"><a href="#top">Back to top ↑</a><a href="#">Instagram</a><a href="#">Are.na</a><a href="#">GitHub</a></div>
+  </footer>
+
+  <dialog id="caseDialog" class="case-dialog">
+    <button class="case-close magnetic" aria-label="Close case study">×</button>
+    <div id="caseContent"></div>
+  </dialog>
+
+  <dialog id="palette" class="palette">
+    <div class="palette-head"><span>JEXN / COMMAND</span><kbd>ESC</kbd></div>
+    <input id="paletteInput" autocomplete="off" placeholder="Jump somewhere…">
+    <div class="palette-list">
+      <button data-go="#work"><span>Selected work</span><kbd>01</kbd></button>
+      <button data-go="#about"><span>About the practice</span><kbd>02</kbd></button>
+      <button data-go="#lab"><span>Experimental lab</span><kbd>03</kbd></button>
+      <button data-go="#contact"><span>Start a project</span><kbd>04</kbd></button>
+    </div>
+  </dialog>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
