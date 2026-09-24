@@ -1,31 +1,27 @@
-# AI Coding Stress Test
+# JEXN — Fictional Portfolio
 
-A deliberately feature-dense single-page project-management dashboard built as a practical coding stress test.
+A visually dense, interactive fictional portfolio for **JEXN**, an independent creative technologist.
 
-The goal is not to maximize framework complexity. The goal is to test whether an AI can design a coherent product, split logic into maintainable modules, implement interactive state, persist data, add keyboard/UX polish, and keep the project verifiable with automated tests.
+## Included
 
-## Planned capabilities
+- Editorial hero with generative ambient canvas
+- Interactive 3D-style artifact and pointer tilt
+- Four fictional case studies with modal detail views
+- Responsive project gallery
+- Service / capability system
+- Experimental lab cards with CSS motion studies
+- Command palette via `Cmd/Ctrl + K`
+- Custom cursor and magnetic interactions
+- Scroll progress and reveal choreography
+- Reduced-motion support
+- Mobile responsive layouts
+- GitHub Pages deployment and CI
 
-- Responsive SaaS-style dashboard
-- Kanban workflow with drag-and-drop
-- Task creation, editing, filtering, and search
-- Persistent state via localStorage
-- Activity feed and project metrics
-- Dark/light theme
-- Keyboard shortcuts and command palette
-- JSON export/import
-- Zero runtime dependencies
-- Automated state/logic tests with Node
-- GitHub Actions CI
-
-## Run locally
-
-Once implementation lands:
+## Local preview
 
 ```bash
 npm test
 npm run serve
 ```
 
-Then open `http://localhost:4173`.
-
+Open `http://localhost:4173`.

@@ -1,76 +1,12 @@
-import { seed } from "./data.js";
-import { STATUSES,createTask,moveTask,upsertTask,deleteTask,filterTasks,metrics } from "./store.js";
-
-const KEY="orbit-state-v1";
-const labels={backlog:"Backlog",progress:"In progress",review:"Review",done:"Done"};
-let state=load();
-let dragged=null;
-const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x?.tasks)return x}catch{} return {tasks:seed,activity:["Workspace initialized"],theme:"dark"}}
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
-function log(message){state.activity=[message,...state.activity].slice(0,20)}
-function render(){
- document.documentElement.dataset.theme=state.theme;
- const query=$("#search").value, priority=$("#priority").value, assignee=$("#assignee").value;
- const visible=filterTasks(state.tasks,{query,priority,assignee});
- const m=metrics(state.tasks);
- $("#metrics").innerHTML=[
-   ["Total tasks",m.total],["Completed",m.done],["Completion",m.completion+"%"],["Overdue",m.overdue]
- ].map(([k,v])=>`<article class="metric"><span>${k}</span><strong>${v}</strong></article>`).join("");
- $("#board").innerHTML=STATUSES.map(status=>{
-   const cards=visible.filter(t=>t.status===status);
-   return `<section class="column" data-status="${status}"><header><b>${labels[status]}</b><span>${cards.length}</span></header>
-   <div class="dropzone">${cards.map(card).join("") || '<div class="empty">Drop tasks here</div>'}</div>
-   <button class="add-inline" data-add="${status}">＋ Add task</button></section>`;
- }).join("");
- $("#activity").innerHTML=state.activity.map((x,i)=>`<li><span class="pulse"></span><div>${esc(x)}<small>${i?"Earlier":"Just now"}</small></div></li>`).join("");
- bindBoard();
- save();
-}
-function card(t){return `<article class="task" draggable="true" data-id="${t.id}">
- <div class="task-top"><span class="priority ${t.priority}">${t.priority}</span><button class="icon edit" aria-label="Edit task">•••</button></div>
- <h3>${esc(t.title)}</h3><p>${esc(t.description)}</p>
- <div class="tags">${t.tags.map(x=>`<span>#${esc(x)}</span>`).join("")}</div>
- <footer><span class="avatar">${esc(t.assignee.slice(0,1))}</span><span>${esc(t.assignee)}</span><time>${t.due||"No due date"}</time></footer>
- </article>`}
-function bindBoard(){
- document.querySelectorAll(".task").forEach(el=>{
-   el.ondragstart=()=>{dragged=el.dataset.id;el.classList.add("dragging")};
-   el.ondragend=()=>{dragged=null;el.classList.remove("dragging")};
-   el.querySelector(".edit").onclick=()=>openModal(state.tasks.find(t=>t.id===el.dataset.id));
- });
- document.querySelectorAll(".column").forEach(col=>{
-   col.ondragover=e=>{e.preventDefault();col.classList.add("over")};
-   col.ondragleave=()=>col.classList.remove("over");
-   col.ondrop=e=>{e.preventDefault();col.classList.remove("over");if(!dragged)return;
-     const t=state.tasks.find(x=>x.id===dragged); state.tasks=moveTask(state.tasks,dragged,col.dataset.status);
-     log(`${t.title} moved to ${labels[col.dataset.status]}`); render();
-   };
- });
- document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>openModal({status:b.dataset.add}));
-}
-function openModal(task={}){
- const f=$("#taskForm"); f.reset();
- f.elements.id.value=task.id||""; f.elements.title.value=task.title||""; f.elements.description.value=task.description||"";
- f.elements.status.value=task.status||"backlog"; f.elements.priority.value=task.priority||"medium";
- f.elements.assignee.value=task.assignee||"Maya"; f.elements.due.value=task.due||""; f.elements.tags.value=(task.tags||[]).join(", ");
- $("#deleteTask").hidden=!task.id; $("#modalTitle").textContent=task.id?"Edit task":"Create task"; $("#taskDialog").showModal();
-}
-$("#taskForm").onsubmit=e=>{e.preventDefault();const fd=new FormData(e.currentTarget);const old=state.tasks.find(t=>t.id===fd.get("id"));
- const task=createTask({id:fd.get("id")||undefined,title:fd.get("title"),description:fd.get("description"),status:fd.get("status"),priority:fd.get("priority"),assignee:fd.get("assignee"),due:fd.get("due"),tags:String(fd.get("tags")).split(",").map(x=>x.trim()).filter(Boolean),createdAt:old?.createdAt});
- state.tasks=upsertTask(state.tasks,task);log((old?"Updated ":"Created ")+task.title);$("#taskDialog").close();render()};
-$("#deleteTask").onclick=()=>{const id=$("#taskForm").elements.id.value;const t=state.tasks.find(x=>x.id===id);state.tasks=deleteTask(state.tasks,id);log("Deleted "+t.title);$("#taskDialog").close();render()};
-$("#cancel").onclick=()=>$("#taskDialog").close();
-$("#newTask").onclick=()=>openModal();
-$("#theme").onclick=()=>{state.theme=state.theme==="dark"?"light":"dark";render()};
-["search","priority","assignee"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",render));
-$("#export").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.download="orbit-workspace.json";a.click();URL.revokeObjectURL(a.href)};
-$("#importFile").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.tasks))throw 0;state={...state,...x};log("Imported workspace snapshot");render()}catch{alert("Invalid workspace JSON")}};
-$("#reset").onclick=()=>{if(confirm("Reset demo data?")){state={tasks:seed,activity:["Workspace reset"],theme:state.theme};render()}};
-$("#command").onclick=()=>$("#palette").showModal();
-$("#paletteInput").oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll("#commands button").forEach(b=>b.hidden=!b.textContent.toLowerCase().includes(q))};
-$("#commands").onclick=e=>{const action=e.target.closest("button")?.dataset.action;if(!action)return;$("#palette").close();({new:()=>openModal(),theme:()=>$("#theme").click(),export:()=>$("#export").click(),reset:()=>$("#reset").click()})[action]?.()};
-document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("#palette").showModal();setTimeout(()=>$("#paletteInput").focus(),0)}if(e.key==="n"&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();openModal()}});
-render();
+const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const cases={vesper:{index:"01 / FINTECH",title:"Vesper Finance",accent:"#805cff",intro:"A speculative wealth platform that turns complex portfolio intelligence into a calm, high-contrast daily ritual.",role:"Product direction + creative development",year:"2026",scope:"Strategy / UX / Motion / Frontend"},nami:{index:"02 / MOBILITY",title:"Nami Mobility",accent:"#ff774d",intro:"A city-scale mobility identity built around warm geometry, live route behavior and interfaces that feel more human than infrastructural.",role:"Brand system + interface",year:"2026",scope:"Identity / Product / Motion"},morrow:{index:"03 / MACHINE INTELLIGENCE",title:"Morrow AI",accent:"#49d8ff",intro:"An identity and prototype for an intelligence layer that explains not only what it predicts, but the uncertainty behind every answer.",role:"Art direction + prototype",year:"2026",scope:"Identity / Research / Interaction"},afterdark:{index:"04 / CULTURE",title:"Afterdark Archive",accent:"#d9ff43",intro:"A living index for electronic culture: part archive, part publication, part event signal. Designed to feel discovered rather than browsed.",role:"Creative direction + platform",year:"2025",scope:"Editorial / Identity / Web"}};
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const revealObserver=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){entry.target.classList.add("in");revealObserver.unobserve(entry.target)}},{threshold:.12,rootMargin:"0px 0px -40px"});$$(".reveal").forEach((el,i)=>{el.style.transitionDelay=Math.min(i%5,4)*45+"ms";revealObserver.observe(el)});
+const nav=$(".nav"),bar=$(".progress span");function onScroll(){nav.classList.toggle("scrolled",scrollY>20);const max=document.documentElement.scrollHeight-innerHeight;bar.style.width=(max?scrollY/max*100:0)+"%"}addEventListener("scroll",onScroll,{passive:true});onScroll();
+const dot=$(".cursor-dot"),ring=$(".cursor-ring");if(matchMedia("(pointer:fine)").matches){let mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;addEventListener("pointermove",e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+"px";dot.style.top=my+"px"});const loop=()=>{rx+=(mx-rx)*.16;ry+=(my-ry)*.16;ring.style.left=rx+"px";ring.style.top=ry+"px";requestAnimationFrame(loop)};loop();$$("a,button,.project").forEach(el=>{el.addEventListener("pointerenter",()=>ring.classList.add("active"));el.addEventListener("pointerleave",()=>ring.classList.remove("active"))})}
+if(!reduced)$$(".magnetic").forEach(el=>{el.addEventListener("pointermove",e=>{const r=el.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;el.style.transform=`translate(${x*.12}px,${y*.12}px)`});el.addEventListener("pointerleave",()=>el.style.transform="")});
+if(!reduced&&matchMedia("(pointer:fine)").matches)$$(".tilt").forEach(el=>{el.addEventListener("pointermove",e=>{const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;el.style.transform=`rotateX(${-y*5}deg) rotateY(${x*7}deg)`});el.addEventListener("pointerleave",()=>el.style.transform="")});
+const canvas=$("#ambient"),ctx=canvas.getContext("2d");let particles=[],w=0,h=0,dpr=1;function resize(){dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+"px";canvas.style.height=h+"px";ctx.setTransform(dpr,0,0,dpr,0,0);particles=Array.from({length:Math.min(70,Math.floor(w/18))},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.2+.2,v:Math.random()*.12+.03,a:Math.random()*.22+.04}))}addEventListener("resize",resize);resize();function ambient(){ctx.clearRect(0,0,w,h);for(const p of particles){p.y-=p.v;if(p.y<-5){p.y=h+5;p.x=Math.random()*w}ctx.beginPath();ctx.fillStyle=`rgba(217,255,67,${p.a})`;ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}requestAnimationFrame(ambient)}if(!reduced)ambient();
+const dialog=$("#caseDialog"),caseContent=$("#caseContent");function openCase(key){const c=cases[key];if(!c)return;caseContent.innerHTML=`<section class="case-hero" style="--case-accent:${c.accent}"><span class="case-index">${c.index}</span><h2>${c.title}</h2><p>${c.intro}</p></section><section class="case-details"><div><small>Role</small><b>${c.role}</b></div><div><small>Year</small><b>${c.year}</b></div><div><small>Scope</small><b>${c.scope}</b></div></section>`;dialog.showModal()}$$(".project").forEach(card=>{const go=()=>openCase(card.dataset.project);card.addEventListener("click",go);card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}})});$(".case-close").addEventListener("click",()=>dialog.close());dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});
+const palette=$("#palette"),paletteInput=$("#paletteInput");function openPalette(){if(!palette.open){palette.showModal();paletteInput.value="";setTimeout(()=>paletteInput.focus(),0)}}$("#openPalette").addEventListener("click",openPalette);addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openPalette()}if(e.key==="Escape"&&palette.open)palette.close()});paletteInput.addEventListener("input",e=>{const q=e.target.value.toLowerCase();$$(".palette-list button").forEach(b=>b.hidden=!b.textContent.toLowerCase().includes(q))});$(".palette-list").addEventListener("click",e=>{const button=e.target.closest("button");if(!button)return;palette.close();document.querySelector(button.dataset.go)?.scrollIntoView({behavior:"smooth"})});palette.addEventListener("click",e=>{if(e.target===palette)palette.close()});
+$$("[data-scroll]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.scroll)?.scrollIntoView({behavior:"smooth"})));if(!reduced)addEventListener("scroll",()=>{const art=$(".hero-art");if(scrollY<innerHeight*1.2)art.style.transform=`translateY(${scrollY*.09}px)`},{passive:true});

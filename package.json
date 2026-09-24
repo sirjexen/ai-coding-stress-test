@@ -1,10 +1,1 @@
-{
-  "name": "ai-coding-stress-test",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test",
-    "serve": "node server.js"
-  }
-}
+{"name":"jexn-portfolio","version":"2.0.0","private":true,"type":"module","scripts":{"test":"node --test","serve":"node server.js"}}
